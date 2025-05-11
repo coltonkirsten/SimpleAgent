@@ -1,5 +1,5 @@
 .env
 notes.md
-venv_manager.sh
+# venv_manager.sh
 HomeworkAgentTest.py
 todos.json

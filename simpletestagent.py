@@ -2,10 +2,7 @@ from agent.litellm_interface import LitellmInterface
 
 Tools = {
   "tools": [
-    "tools.weather_tool",
-    "tools.light_control_tool",
-    "tools.util_tools",
-    "tools.web_search_tool",
+    "tools.echo_tool",
   ]
 }
 
@@ -23,7 +20,7 @@ bot = LitellmInterface(
 
 # Start conversation loop
 print("-" * 50)
-print("Welcome to the agent")
+print("Welcome to the homework agent")
 print("Model: ", model)
 print("\nType 'exit', 'quit', or 'bye' to end the conversation.")
 print("-" * 50)

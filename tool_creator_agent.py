@@ -121,9 +121,9 @@ def save_tool(code, tool_name=None):
     filename = generate_tool_filename(tool_name)
     
     # Ensure tools directory exists
-    tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+    tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "custom_tools")
     if not os.path.exists(tools_dir):
-        tools_dir = "tools"  # Fall back to relative path
+        tools_dir = "custom_tools"  # Fall back to relative path
     
     filepath = os.path.join(tools_dir, filename)
     

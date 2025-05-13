@@ -88,8 +88,8 @@ def log(message, type="system", source=None):
         elif type == "tool":
             color_code = "\033[33m"  # Yellow color for tool logs
         # Only print the last 100 characters of the message
-        truncated_message = message[-100:] if len(message) > 100 else message
-        print(f"\n{color_code}< ({source}) {type} > {truncated_message}\033[0m")
+        # truncated_message = message[-100:] if len(message) > 100 else message
+        print(f"\n{color_code}< ({source}) {type} > {message}\033[0m")
     
     # Write to log file if enabled
     if settings["logging"]["write_to_file"]:

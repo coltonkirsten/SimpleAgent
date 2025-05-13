@@ -46,6 +46,7 @@ class LitellmInterface:
 
         # state management
         self.second_response = False
+        self.predicted_output = None
         
 
     # TODO determine helper funcs neeeded (set_model, set_messages, forget, etc)
@@ -55,10 +56,14 @@ class LitellmInterface:
         # Return a formatted version of the messages for better readability
         return json.dumps(self.messages, indent=2, ensure_ascii=False)
 
-    def prompt(self, prompt, image=None):
+    def prompt(self, prompt, image=None, predicted_output=None):
         if not self.save_history:
             self.messages = [{"role": "system", "content": self.system_role}]
         
+        # set predicted output if provided  (used lated in _api_call())
+        if predicted_output is not None:
+            self.predicted_output = {"type": "content", "content": predicted_output}
+
         if prompt is not None:
             if image is not None:
                 # Create multimodal message with text and image
@@ -91,9 +96,15 @@ class LitellmInterface:
         if self.tools:
             request_params["tools"] = self.tools[0]
             request_params["tool_choice"] = "auto"
+        
+        # add prediction if it exists
+        if self.predicted_output is not None:
+            request_params["prediction"] = self.predicted_output
+            self.predicted_output = None
 
         response = completion(**request_params)
         logger.log(f"LITELLM({self.model})", "llm", self.name)
+        logger.log(f"LITELLM({self.model}) Request Params: {request_params}", "debug", self.name)
 
         if self.stream:
             return self._stream_handler(response)

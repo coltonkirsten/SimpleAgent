@@ -1,5 +1,8 @@
+#under construction - do not use
 from openai import OpenAI
-from . import apikey, logger
+
+from .utils import logger
+from . import apikey
 
 # history is saved automatically
 # messages can be passed in, 

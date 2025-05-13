@@ -1,7 +1,7 @@
 from litellm import completion
 from dotenv import load_dotenv
-import SimpleAgent.utils.logger as logger
-from SimpleAgent.utils.tool_manager import load_tools
+from .utils import logger
+from .utils.tool_manager import load_tools
 import json
 
 ## load environment variables from .env file

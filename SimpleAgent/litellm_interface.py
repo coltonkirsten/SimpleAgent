@@ -93,7 +93,7 @@ class LitellmInterface:
             request_params["tool_choice"] = "auto"
 
         response = completion(**request_params)
-        logger.log(f"LITELLM({self.model}) Request Params: {request_params}", "llm", self.name)
+        logger.log(f"LITELLM({self.model})", "llm", self.name)
 
         if self.stream:
             return self._stream_handler(response)

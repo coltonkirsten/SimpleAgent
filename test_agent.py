@@ -1,4 +1,4 @@
-from agent.litellm_interface import LitellmInterface
+from SimpleAgent.litellm_interface import LitellmInterface
 
 # Settings to control which backend and mode to use
 settings = {

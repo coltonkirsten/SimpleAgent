@@ -45,7 +45,7 @@ LOG_FILE = logs_dir / f"log_{SESSION_TIMESTAMP}.txt"
 # Initialize settings
 settings = load_settings()
 
-def log(message, type="system"):
+def log(message, type="system", source=None):
     """
     Log a message.
     
@@ -53,6 +53,9 @@ def log(message, type="system"):
         message: The message to log
         type: The type of log (system, debug, error, llm, tool)
     """
+
+    if source is None:
+        source = "Unnamed Agent"
     # Get the caller's frame info
     caller_frame = inspect.currentframe().f_back
     source_info = f"{caller_frame.f_code.co_filename}:{caller_frame.f_lineno}"
@@ -72,7 +75,7 @@ def log(message, type="system"):
 
     # Format the log message
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted_log = f"[{timestamp}] <{type}> ({source_info}) {message}"
+    formatted_log = f"[{timestamp}] < ({source}) {type}> ({source_info}) {message}"
     
     # Print to console if enabled
     if should_print:
@@ -84,7 +87,9 @@ def log(message, type="system"):
             color_code = "\033[35m"  # Purple/Magenta color for LLM logs
         elif type == "tool":
             color_code = "\033[33m"  # Yellow color for tool logs
-        print(f"\n{color_code}< {type} > ({source_info}) {message}\033[0m")
+        # Only print the last 100 characters of the message
+        truncated_message = message[-100:] if len(message) > 100 else message
+        print(f"\n{color_code}< ({source}) {type} > {truncated_message}\033[0m")
     
     # Write to log file if enabled
     if settings["logging"]["write_to_file"]:

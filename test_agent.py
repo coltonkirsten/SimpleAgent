@@ -10,7 +10,7 @@ Tools = {
   "tools": [
     "tools.weather_tool",
     "custom_tools.todo_tool",
-    "tools.light_control_tool",
+    "custom_tools.light_control_tool",
     "tools.util_tools",
     "tools.web_search_tool",
   ]

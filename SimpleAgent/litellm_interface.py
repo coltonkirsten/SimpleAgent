@@ -1,7 +1,7 @@
 from litellm import completion
 from dotenv import load_dotenv
-from . import logger
-from .tool_manager import load_tools
+import SimpleAgent.utils.logger as logger
+from SimpleAgent.utils.tool_manager import load_tools
 import json
 
 ## load environment variables from .env file
@@ -12,19 +12,18 @@ class LitellmInterface:
         self,
         model,
         system_role,
+        name="Unnamed Agent",
         tools = None,
         messages = None,
-        reasoning = False,
         save_history = True,
         stream = True
     ):
         # init client
+        self.name = name
         self.model = model
         self.system_role = system_role
 
         # settings
-        # TODO add reasoning for supported models
-        self.reasoning = reasoning
         self.save_history = save_history
         self.stream = stream
 
@@ -34,14 +33,15 @@ class LitellmInterface:
         else:
             self.messages = messages
 
+        logger.log(f"Agent {self.name} initialized with model {self.model}", "system", self.name)
 
         # load tools
         self.tools = load_tools(tools) # returns [interfaces, functions], or None if tools=None
         if self.tools:
-            logger.log(f"Loaded tool interfaces: {self.tools[0]}", "debug")
-            logger.log(f"Available functions: {list(self.tools[1].keys())}", "system")
+            logger.log(f"Loaded tool interfaces: {self.tools[0]}", "debug", self.name)
+            logger.log(f"Available functions: {list(self.tools[1].keys())}", "system", self.name)
         else:
-            logger.log("No tools loaded", "system")
+            logger.log("No tools loaded", "system", self.name)
 
 
         # state management
@@ -55,63 +55,31 @@ class LitellmInterface:
         # Return a formatted version of the messages for better readability
         return json.dumps(self.messages, indent=2, ensure_ascii=False)
 
-    def prompt(self, prompt):
+    def prompt(self, prompt, image=None):
         if not self.save_history:
             self.messages = [{"role": "system", "content": self.system_role}]
+        
         if prompt is not None:
-            self._add_user_msg(prompt)
+            if image is not None:
+                # Create multimodal message with text and image
+                content = [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image}",
+                        },
+                    },
+                ]
+                self._add_user_msg(content)
+            else:
+                # Standard text-only message
+                self._add_user_msg(prompt)
         else:
             logger.log("No user message provided", "error")
             return None
         
         return self._api_call()
-    
-    def _add_user_msg(self, msg):
-        self.messages.append({"role": "user", "content": msg})
-
-    def _add_assistant_msg(self, msg):
-        self.messages.append({"role": "assistant", "content": msg})
-
-    def _add_tool_use_msg(self, tool_call):
-        tool_use_msg = {
-            "role": "assistant",
-            "tool_calls": [{
-                "id": tool_call.id,
-                "type": tool_call.type,
-                "index": tool_call.index,
-                "function": {
-                    "name": tool_call.function.name,
-                    "arguments": tool_call.function.arguments
-                }
-            }]
-        }
-        self.messages.append(tool_use_msg)
-
-    def _stream_add_tool_use_msg(self, tool_call):
-        tool_use_msg = {
-            "role": "assistant",
-            "tool_calls": [{
-                "id": tool_call["id"],
-                "type": tool_call["type"],
-                "index": tool_call["index"],
-                "function": {
-                    "name": tool_call["name"],
-                    "arguments": tool_call["arguments"]
-                }
-            }]
-        }
-        self.messages.append(tool_use_msg)
-
-
-    def _add_tool_result(self, tool_call_id, function_name, function_response):
-        self.messages.append(
-          {
-              "role": "tool",
-              "tool_call_id": tool_call_id,
-              "name": function_name,
-              "content": function_response,
-          }
-        )
     
     def _api_call(self):
         request_params = {
@@ -125,7 +93,7 @@ class LitellmInterface:
             request_params["tool_choice"] = "auto"
 
         response = completion(**request_params)
-        logger.log(f"LITELLM({self.model}) Request Params: {request_params}", "llm")
+        logger.log(f"LITELLM({self.model}) Request Params: {request_params}", "llm", self.name)
 
         if self.stream:
             return self._stream_handler(response)
@@ -137,7 +105,7 @@ class LitellmInterface:
         tool_calls = {}  # accumulate tool calls by index
         
         for chunk in response:
-            logger.log(f"Chunk: {chunk}", "debug")
+            logger.log(f"Chunk: {chunk}", "debug", self.name)
             delta = chunk.choices[0].delta
 
             # tool branch
@@ -211,12 +179,60 @@ class LitellmInterface:
     def _call_tool(self, name, args):
         tools = self.tools[1]
         if name not in tools:
-            logger.log(f"Tool '{name}' not found", "error")
+            logger.log(f"Tool '{name}' not found", "error", self.name)
             return f"No tool named {name} available."
         try:
             res = tools[name](**args)
-            logger.log(f"{name}({args}) -> {res}", "tool")
+            logger.log(f"{name}({args}) -> {res}", "tool", self.name)
             return str(res)
         except Exception as exc:
-            logger.log(f"TOOL ERROR: {name}: {exc}", "error")
+            logger.log(f"{name}({args}) -> ERROR", "tool", self.name)
+            logger.log(f"TOOL ERROR: {name}: {exc}", "error", self.name)
             return f"Error with tool {name}: {exc}"
+        
+    def _add_user_msg(self, msg):
+        self.messages.append({"role": "user", "content": msg})
+
+    def _add_assistant_msg(self, msg):
+        self.messages.append({"role": "assistant", "content": msg})
+
+    def _add_tool_use_msg(self, tool_call):
+        tool_use_msg = {
+            "role": "assistant",
+            "tool_calls": [{
+                "id": tool_call.id,
+                "type": tool_call.type,
+                "index": tool_call.index,
+                "function": {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments
+                }
+            }]
+        }
+        self.messages.append(tool_use_msg)
+
+    def _stream_add_tool_use_msg(self, tool_call):
+        tool_use_msg = {
+            "role": "assistant",
+            "tool_calls": [{
+                "id": tool_call["id"],
+                "type": tool_call["type"],
+                "index": tool_call["index"],
+                "function": {
+                    "name": tool_call["name"],
+                    "arguments": tool_call["arguments"]
+                }
+            }]
+        }
+        self.messages.append(tool_use_msg)
+
+
+    def _add_tool_result(self, tool_call_id, function_name, function_response):
+        self.messages.append(
+          {
+              "role": "tool",
+              "tool_call_id": tool_call_id,
+              "name": function_name,
+              "content": function_response,
+          }
+        )

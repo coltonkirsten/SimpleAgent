@@ -114,6 +114,7 @@ class LitellmInterface:
     def _stream_handler(self, response):
         full_response = ""
         tool_calls = {}  # accumulate tool calls by index
+        content_buffer = ""  # buffer for partial assistant content
         
         for chunk in response:
             logger.log(f"Chunk: {chunk}", "debug", self.name)
@@ -143,6 +144,10 @@ class LitellmInterface:
                         tool_calls[index]["arguments"] += tc.function.arguments
 
             if chunk.choices[0].finish_reason == "tool_calls":
+                # flush buffered content before tool calls
+                if content_buffer:
+                    self._add_assistant_msg(content_buffer)
+                    content_buffer = ""
                 # process all tool calls in order of their indices
                 for idx in sorted(tool_calls.keys()):
                     tool_call = tool_calls[idx]
@@ -153,18 +158,20 @@ class LitellmInterface:
                     self._add_tool_result(tool_call["id"], tool_name, tool_result)
                 self.second_response = True
             
-            # follow up response from llm after tool call
-            if self.second_response:
-                self.second_response = False
-                yield from self._api_call()
-    
             # content branch
             if delta.content is not None:
                 full_response += delta.content
+                content_buffer += delta.content
                 yield delta.content
-        
-        # After generator is exhausted, save to history
-        self._add_assistant_msg(full_response)
+
+        # After generator is exhausted, save any remaining buffered content to history
+        if content_buffer:
+            self._add_assistant_msg(content_buffer)
+
+        # follow up response from llm after tool call
+        if self.second_response:
+            self.second_response = False
+            yield from self._api_call()
 
     def _static_handler(self, response):
         response_msg = response.choices[0].message

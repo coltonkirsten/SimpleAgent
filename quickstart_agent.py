@@ -27,6 +27,7 @@ else:
 
 # Create the LitellmInterface instance
 bot = LitellmInterface(
+    name="quickstart_agent",
     model=model,
     system_role=system_message,
     stream=settings["stream"],

@@ -2,8 +2,8 @@ from SimpleAgent.litellm_interface import LitellmInterface
 
 # Settings to control which backend and mode to use
 settings = {
-    "backend": "anthropic",  # "openai" or "anthropic"
-    "stream": True,       # True for streaming, False for non-streaming
+    "backend": "openai",  # "openai" or "anthropic"
+    "stream": False,       # True for streaming, False for non-streaming
 }
 
 Tools = {

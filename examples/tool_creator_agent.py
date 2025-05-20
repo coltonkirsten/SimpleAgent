@@ -1,6 +1,6 @@
 import os
 import sys
-from agent.litellm_interface import LitellmInterface
+from SimpleAgent.litellm_interface import LitellmInterface
 
 def generate_tool_filename(tool_name):
     """Convert a tool name to a valid Python filename."""
@@ -81,7 +81,7 @@ def create_tool(prompt):
     
     # Initialize LitellmInterface with appropriate model
     bot = LitellmInterface(
-        model="anthropic/claude-3-5-haiku-latest",
+        model="openai/gpt-4.1",
         system_role=system_message,
         stream=False
     )

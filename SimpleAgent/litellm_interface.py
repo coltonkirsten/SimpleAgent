@@ -220,7 +220,6 @@ class LitellmInterface:
             "tool_calls": [{
                 "id": tool_call.id,
                 "type": tool_call.type,
-                "index": tool_call.index,
                 "function": {
                     "name": tool_call.function.name,
                     "arguments": tool_call.function.arguments

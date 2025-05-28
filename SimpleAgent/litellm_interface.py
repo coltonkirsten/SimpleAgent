@@ -51,6 +51,14 @@ class LitellmInterface:
 
     # TODO determine helper funcs neeeded (set_model, set_messages, forget, etc)
 
+    def forget(self):
+        """Forget the chat history."""
+        self.messages = [{"role": "system", "content": self.system_role}]
+
+    def set_model(self, model):
+        """Set the model to use."""
+        self.model = model
+
     def show_chat(self):
         """Return the chat history in a human-readable format."""
         # Return a formatted version of the messages for better readability

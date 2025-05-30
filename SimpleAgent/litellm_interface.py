@@ -54,6 +54,8 @@ class LitellmInterface:
     def forget(self):
         """Forget the chat history."""
         self.messages = [{"role": "system", "content": self.system_role}]
+        self.second_response = False
+        self.predicted_output = None
 
     def set_model(self, model):
         """Set the model to use."""
